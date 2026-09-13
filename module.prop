@@ -1,0 +1,6 @@
+id=ksu-bundle-installer
+name=KSU Bundle Installer
+version=1.0.0
+versionCode=1
+author=local
+description=Install bundled KernelSU modules in filename order
