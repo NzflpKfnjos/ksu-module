@@ -5,12 +5,18 @@
 # the normal KernelSU installation flow and lifecycle scripts.
 
 KSU_DAEMON="${KSU_DAEMON:-/data/adb/ksud}"
-PM="${PM:-/system/bin/pm}"
+CMD="${CMD:-/system/bin/cmd}"
+SU="${SU:-/system/bin/su}"
 SDCARD_DIR="${SDCARD_DIR:-/sdcard}"
+APK_TMP_DIR="${APK_TMP_DIR:-/data/local/tmp/ksu-bundle-apks}"
 ARCHIVE_LIST="$MODPATH/.ksu-bundle-archives"
 APK_LIST="$MODPATH/.ksu-bundle-apks"
 SDCARD_LIST="$MODPATH/.ksu-bundle-sdcard"
+APK_OUTPUT="$MODPATH/.ksu-bundle-apk-output"
 ID_LIST="$MODPATH/.ksu-bundle-ids"
+DEFERRED_ARCHIVE=
+DEFERRED_ID=
+MODULE_COUNT=0
 
 ui_print ""
 ui_print "== KSU Bundle Installer =="
@@ -78,13 +84,23 @@ if [ -s "$ARCHIVE_LIST" ]; then
     fi
     printf '%s\n' "$id" >> "$ID_LIST"
 
+    if [ "$id" = "m_rcq" ]; then
+      if [ -n "$DEFERRED_ARCHIVE" ]; then
+        abort "! More than one m_rcq module was found"
+      fi
+      DEFERRED_ARCHIVE=$archive
+      DEFERRED_ID=$id
+      ui_print "- Deferring module ${archive##*/} [$id] until the end"
+      continue
+    fi
+
     ui_print "- Installing module ${archive##*/} [$id]"
     if ! "$KSU_DAEMON" module install "$archive"; then
       abort "! Module installation failed: ${archive##*/}"
     fi
-    count=$((count + 1))
+    MODULE_COUNT=$((MODULE_COUNT + 1))
   done < "$ARCHIVE_LIST"
-  ui_print "- Installed $count KSU module(s)"
+  ui_print "- Installed $MODULE_COUNT KSU module(s) before final module"
 fi
 
 if [ -s "$APK_LIST" ]; then
@@ -92,20 +108,66 @@ if [ -s "$APK_LIST" ]; then
   mv -f "$APK_LIST.sorted" "$APK_LIST" \
     || abort "! Cannot prepare the APK list"
 
-  if [ ! -x "$PM" ]; then
-    abort "! $PM was not found or is not executable"
+  if [ ! -x "$CMD" ]; then
+    CMD=$(command -v cmd 2>/dev/null) || CMD=
+  fi
+  if [ -z "$CMD" ] || [ ! -x "$CMD" ]; then
+    abort "! cmd was not found or is not executable"
   fi
 
+  if [ ! -x "$SU" ]; then
+    SU=$(command -v su 2>/dev/null) || SU=
+  fi
+
+  if [ -z "$SU" ] || [ ! -x "$SU" ]; then
+    abort "! su was not found; refusing to run cmd package without root"
+  fi
+
+  APK_TMP_DIR="${APK_TMP_DIR:-/data/local/tmp/ksu-bundle-apks}"
+  rm -rf "$APK_TMP_DIR"
+  mkdir -p "$APK_TMP_DIR" \
+    || abort "! Cannot create temporary APK directory: $APK_TMP_DIR"
+  chmod 755 "$APK_TMP_DIR"
+  chcon u:object_r:shell_data_file:s0 "$APK_TMP_DIR" 2>/dev/null || true
+
   apk_count=0
+  apk_failed_count=0
   while IFS= read -r apk; do
     [ -n "$apk" ] || continue
-    ui_print "- Installing APK ${apk##*/}"
-    if ! "$PM" install -r "$apk"; then
-      abort "! APK installation failed: ${apk##*/}"
+    staged_apk="$APK_TMP_DIR/apk-$apk_count.apk"
+    if ! cp -f "$apk" "$staged_apk" || ! chmod 644 "$staged_apk"; then
+      rm -rf "$APK_TMP_DIR"
+      abort "! Cannot stage APK: ${apk##*/}"
     fi
+    chcon u:object_r:shell_data_file:s0 "$staged_apk" 2>/dev/null || true
+
+    ui_print "- Installing APK ${apk##*/} through su -> cmd package"
+    : > "$APK_OUTPUT"
+    if "$SU" -M -c "$CMD package install -r \"$staged_apk\"" > "$APK_OUTPUT" 2>&1; then
+      apk_status=0
+    else
+      apk_status=$?
+    fi
+
+    if [ "$apk_status" -ne 0 ]; then
+      while IFS= read -r line; do
+        [ -n "$line" ] && ui_print "! $line"
+      done < "$APK_OUTPUT"
+      ui_print "! su: $SU -M -c"
+      ui_print "! cmd: $CMD"
+      ui_print "! exit code: $apk_status"
+      rm -f "$staged_apk"
+      apk_failed_count=$((apk_failed_count + 1))
+      ui_print "! Skipping APK after installation failure: ${apk##*/}"
+      continue
+    fi
+
+    rm -f "$staged_apk"
     apk_count=$((apk_count + 1))
   done < "$APK_LIST"
-  ui_print "- Installed $apk_count APK(s)"
+  rm -rf "$APK_TMP_DIR"
+  rm -f "$APK_OUTPUT"
+  ui_print "- Installed $apk_count APK(s); skipped $apk_failed_count failed APK(s)"
 fi
 
 move_sdcard_item() {
@@ -146,6 +208,15 @@ if [ -d "$MODPATH/sdcard" ]; then
     sdcard_count=$((sdcard_count + 1))
   done < "$SDCARD_LIST"
   ui_print "- Moved $sdcard_count item(s) to /sdcard/"
+fi
+
+if [ -n "$DEFERRED_ARCHIVE" ]; then
+  ui_print "- Installing final module ${DEFERRED_ARCHIVE##*/} [$DEFERRED_ID]"
+  if ! "$KSU_DAEMON" module install "$DEFERRED_ARCHIVE"; then
+    abort "! Module installation failed: ${DEFERRED_ARCHIVE##*/}"
+  fi
+  MODULE_COUNT=$((MODULE_COUNT + 1))
+  ui_print "- Installed $MODULE_COUNT KSU module(s) in total"
 fi
 
 # The payload has served its purpose. Keep the installed outer module small;
