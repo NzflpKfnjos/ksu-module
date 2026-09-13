@@ -10,14 +10,21 @@ case "$OUT" in
 esac
 
 found=false
-for archive in "$ROOT"/*.zip "$ROOT"/packages/*.zip; do
-  [ -f "$archive" ] || continue
-  [ "$archive" = "$OUT" ] && continue
+if [ -n "$(find "$ROOT/modules" -maxdepth 1 -type f -iname '*.zip' \
+  -print 2>/dev/null | head -n 1)" ]; then
   found=true
-  break
-done
+fi
+if [ "$found" = false ] && [ -n "$(find "$ROOT/apks" -maxdepth 1 -type f -iname '*.apk' \
+  -print 2>/dev/null | head -n 1)" ]; then
+  found=true
+fi
+if [ "$found" = false ] && [ -d "$ROOT/sdcard" ] \
+  && [ -n "$(find "$ROOT/sdcard" -mindepth 1 -maxdepth 1 ! -name '.gitkeep' \
+    -print 2>/dev/null | head -n 1)" ]; then
+  found=true
+fi
 if [ "$found" != true ]; then
-  printf 'No nested .zip files found. Put the modules in the project root or packages/.\n' >&2
+  printf 'No payload found. Put module ZIPs in modules/, APKs in apks/, or files in sdcard/.\n' >&2
   exit 1
 fi
 
