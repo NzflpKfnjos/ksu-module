@@ -51,12 +51,21 @@ jobs:
           REPOSITORY: ${{ github.repository }}
         run: |
           set -euo pipefail
+          changelog_url="https://github.com/${REPOSITORY}/raw/main/changelog.md"
+          changelog_entry="## [${VERSION}](https://github.com/${REPOSITORY}/releases/tag/v${VERSION})\n\n- Automatic update for commit ${GITHUB_SHA::7}.\n"
+          if [ -f changelog.md ]; then
+            printf '%b\n' "${changelog_entry}" > changelog.md.tmp
+            cat changelog.md >> changelog.md.tmp
+            mv changelog.md.tmp changelog.md
+          else
+            printf '%b\n' "${changelog_entry}" > changelog.md
+          fi
           cat > update.json <<EOF
           {
             "version": "${VERSION}",
             "versionCode": ${VERSION_CODE},
             "zipUrl": "https://v4.gh-proxy.org/https://github.com/${REPOSITORY}/releases/download/v${VERSION}/${MODULE_ID}.zip",
-            "changelog": "[${VERSION}](https://github.com/${REPOSITORY}/releases/tag/v${VERSION})"
+            "changelog": "${changelog_url}"
           }
           EOF
 
@@ -67,7 +76,7 @@ jobs:
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add update.json
+          git add update.json changelog.md
           if git diff --cached --quiet; then
             echo "update.json is already current."
           else

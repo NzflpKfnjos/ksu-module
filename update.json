@@ -1,6 +1,6 @@
 {
-  "version": "1.0.16",
-  "versionCode": 16,
-  "zipUrl": "https://v4.gh-proxy.org/https://github.com/NzflpKfnjos/ksu-module/releases/download/v1.0.16/ksu-bundle-installer.zip",
-  "changelog": "[1.0.16](https://github.com/NzflpKfnjos/ksu-module/releases/tag/v1.0.16)"
+  "version": "1.0.15",
+  "versionCode": 15,
+  "zipUrl": "https://v4.gh-proxy.org/https://github.com/NzflpKfnjos/ksu-module/releases/download/v1.0.15/ksu-bundle-installer.zip",
+  "changelog": "https://github.com/NzflpKfnjos/ksu-module/raw/main/changelog.md"
 }
