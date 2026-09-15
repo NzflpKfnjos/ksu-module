@@ -38,6 +38,17 @@ ksu-module/
 5. 在 KernelSU 管理器中安装生成的 `dist/ksu-bundle-installer.zip`。
 6. 等待安装日志完成后重启设备，使 KSU 模块生效。
 
+## 在 KernelSU 中远程更新
+
+外层模块的 `module.prop` 已声明 `updateJson`，KernelSU 管理器会从该地址检查版本。发布新版本时：
+
+1. 修改 `module.prop` 中的 `version` 和递增的 `versionCode`。
+2. 修改 `update.json` 中的 `version`、`versionCode`、`zipUrl` 和 `changelog`。
+3. 将 `update.json` 放到仓库默认分支的 Raw 地址，并把 `module.prop` 的 `updateJson` 替换为该实际地址。
+4. 执行 `sh build.sh`，将生成的 ZIP 上传到 `zipUrl` 对应的 GitHub Release 资产（文件名建议保持 `ksu-bundle-installer.zip`）。
+
+`versionCode` 必须比设备当前安装版本大，管理器才会显示更新。`update.json` 是公开文件，不要在 URL 中放置令牌或私密信息。
+
 文件名采用字典序处理。需要严格控制普通模块和 APK 的顺序时，建议使用 `01-xxx.zip`、`02-xxx.zip`，以及 `01-xxx.apk`、`02-xxx.apk` 这样的名称。正常处理顺序为：先所有 KSU 模块，再所有 APK，最后移动 `sdcard/` 内容。模块 ID 为 `m_rcq` 的模块会被特殊延迟到全部模块、APK 和 `/sdcard/` 文件操作完成后再安装，即使它的文件名较早也会保持最后安装。
 
 每个内层 ZIP 必须是标准 KernelSU 模块，并且 ZIP 根目录包含 `module.prop`。脚本会校验 ZIP、模块 ID，并拒绝重复的模块 ID。

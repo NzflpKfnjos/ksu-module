@@ -4,3 +4,5 @@ version=1.0.0
 versionCode=1
 author=local
 description=Install KSU modules, APK apps, and files to /sdcard/ in order
+# KernelSU Manager reads this JSON to check for a newer bundle and download it.
+updateJson=https://raw.githubusercontent.com/REPLACE_OWNER/REPLACE_REPO/main/update.json

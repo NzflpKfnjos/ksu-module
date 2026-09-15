@@ -35,6 +35,6 @@ rm -f "$OUT"
 cd "$ROOT"
 zip -9 -r "$OUT" . \
   -x './.git/*' './.DS_Store' './.gitignore' './build.sh' './dist/*' \
-     './tests/*' "./${OUT#"$ROOT"/}" >/dev/null
+     './tests/*' './update.json' "./${OUT#"$ROOT"/}" >/dev/null
 
 printf 'Built %s\n' "$OUT"
