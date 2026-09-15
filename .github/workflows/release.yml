@@ -30,16 +30,24 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          base_version="$(sed -n 's/^version=//p' module.prop | head -n 1)"
-          base_version="${base_version:-1.0.0}"
           version_code="${GITHUB_RUN_NUMBER}"
-          version="${base_version}.${version_code}"
+          version="1.0.${version_code}"
           id="$(sed -n 's/^id=//p' module.prop | head -n 1)"
           test -n "$version_code"
           test -n "$id"
           echo "version=$version" >> "$GITHUB_OUTPUT"
           echo "version_code=$version_code" >> "$GITHUB_OUTPUT"
           echo "id=$id" >> "$GITHUB_OUTPUT"
+
+      - name: Update module version
+        env:
+          VERSION: ${{ steps.metadata.outputs.version }}
+          VERSION_CODE: ${{ steps.metadata.outputs.version_code }}
+        run: |
+          set -euo pipefail
+          sed -i -E "s/^version=.*/version=${VERSION}/; s/^versionCode=.*/versionCode=${VERSION_CODE}/" module.prop
+          grep -q "^version=${VERSION}$" module.prop
+          grep -q "^versionCode=${VERSION_CODE}$" module.prop
 
       - name: Build module ZIP
         run: sh build.sh "dist/${{ steps.metadata.outputs.id }}.zip"
@@ -68,7 +76,7 @@ jobs:
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add update.json
+          git add module.prop update.json
           if git diff --cached --quiet; then
             echo "update.json is already current."
             exit 0
