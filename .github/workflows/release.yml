@@ -56,7 +56,7 @@ jobs:
             "version": "${VERSION}",
             "versionCode": ${VERSION_CODE},
             "zipUrl": "https://v4.gh-proxy.org/https://github.com/${REPOSITORY}/releases/download/v${VERSION}/${MODULE_ID}.zip",
-            "changelog": "Automatic update for commit ${GITHUB_SHA::7}."
+            "changelog": "[${VERSION}](https://github.com/${REPOSITORY}/releases/tag/v${VERSION})"
           }
           EOF
 
