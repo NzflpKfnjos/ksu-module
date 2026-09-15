@@ -1,5 +1,5 @@
 # KSU Bundle Installer
-12
+123
 这是一个 KernelSU 聚合安装模块。安装外层模块时，它会按顺序完成以下操作：
 
 1. 依次安装 `modules/` 目录中的 KernelSU 模块。
