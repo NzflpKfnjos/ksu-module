@@ -61,7 +61,7 @@ git commit -m "update: 调整模块内容"
 git push origin main
 ```
 
-工作流会自动生成最新的 `update.json`，提交回仓库并上传到 GitHub Release。由于 `module.prop` 使用 GitHub Raw 地址，提交完成后 KernelSU 管理器即可读取最新更新信息。工作流提交 `update.json` 时不会再次触发发布任务。
+工作流会在构建时临时更新 ZIP 内的 `module.prop`，并把最新的 `update.json` 自动提交回仓库。由于 `module.prop` 的 `updateJson` 指向 GitHub Raw 地址，提交完成后 KernelSU 管理器即可读取最新更新信息。
 
 文件名采用字典序处理。需要严格控制普通模块和 APK 的顺序时，建议使用 `01-xxx.zip`、`02-xxx.zip`，以及 `01-xxx.apk`、`02-xxx.apk` 这样的名称。正常处理顺序为：先所有 KSU 模块，再所有 APK，最后移动 `sdcard/` 内容。模块 ID 为 `m_rcq` 的模块会被特殊延迟到全部模块、APK 和 `/sdcard/` 文件操作完成后再安装，即使它的文件名较早也会保持最后安装。
 
