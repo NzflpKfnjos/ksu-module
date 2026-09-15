@@ -5,4 +5,4 @@ versionCode=1
 author=local
 description=Install KSU modules, APK apps, and files to /sdcard/ in order
 # KernelSU Manager reads this JSON to check for a newer bundle and download it.
-updateJson=https://beifen1.cn-nb1.rains3.com/update.json
+updateJson=https://raw.githubusercontent.com/NzflpKfnjos/ksu-module/refs/heads/main/update.json
