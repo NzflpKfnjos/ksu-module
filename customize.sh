@@ -94,8 +94,10 @@ if [ -s "$ARCHIVE_LIST" ]; then
       continue
     fi
 
-    ui_print "- Installing module ${archive##*/} [$id]"
-    if ! "$KSU_DAEMON" module install "$archive"; then
+    # Nested modules may run their own customize/service hooks and produce a
+    # large amount of installer output. Keep the bundle log concise; the
+    # aggregate result below is sufficient for successful installs.
+    if ! "$KSU_DAEMON" module install "$archive" >/dev/null 2>&1; then
       abort "! Module installation failed: ${archive##*/}"
     fi
     MODULE_COUNT=$((MODULE_COUNT + 1))
@@ -211,8 +213,7 @@ if [ -d "$MODPATH/sdcard" ]; then
 fi
 
 if [ -n "$DEFERRED_ARCHIVE" ]; then
-  ui_print "- Installing final module ${DEFERRED_ARCHIVE##*/} [$DEFERRED_ID]"
-  if ! "$KSU_DAEMON" module install "$DEFERRED_ARCHIVE"; then
+  if ! "$KSU_DAEMON" module install "$DEFERRED_ARCHIVE" >/dev/null 2>&1; then
     abort "! Module installation failed: ${DEFERRED_ARCHIVE##*/}"
   fi
   MODULE_COUNT=$((MODULE_COUNT + 1))
