@@ -49,6 +49,20 @@ ksu-module/
 
 `versionCode` 必须比设备当前安装版本大，管理器才会显示更新。`update.json` 是公开文件，不要在 URL 中放置令牌或私密信息。
 
+## 自动发布 GitHub 更新
+
+仓库已配置 `.github/workflows/release.yml`。每次提交推送到 `main` 分支时，GitHub Actions 都会自动执行构建并创建一个 GitHub Release。版本号和 `versionCode` 由工作流自动生成，标签格式为 `v版本号`。
+
+发布新版本时不需要修改版本字段，直接提交代码即可：
+
+```properties
+git add .
+git commit -m "update: 调整模块内容"
+git push origin main
+```
+
+工作流会自动生成并上传 `update.json` 和模块 ZIP。由于当前 `module.prop` 使用固定的外部 `updateJson` 地址，请将该地址配置为一个会被同步更新的公开地址；如果直接使用 GitHub Release 资产，则每次发布后需要让固定地址返回最新的 `update.json`。
+
 文件名采用字典序处理。需要严格控制普通模块和 APK 的顺序时，建议使用 `01-xxx.zip`、`02-xxx.zip`，以及 `01-xxx.apk`、`02-xxx.apk` 这样的名称。正常处理顺序为：先所有 KSU 模块，再所有 APK，最后移动 `sdcard/` 内容。模块 ID 为 `m_rcq` 的模块会被特殊延迟到全部模块、APK 和 `/sdcard/` 文件操作完成后再安装，即使它的文件名较早也会保持最后安装。
 
 每个内层 ZIP 必须是标准 KernelSU 模块，并且 ZIP 根目录包含 `module.prop`。脚本会校验 ZIP、模块 ID，并拒绝重复的模块 ID。

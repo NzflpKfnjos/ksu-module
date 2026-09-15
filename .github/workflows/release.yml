@@ -1,0 +1,80 @@
+name: Build and publish KernelSU module
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - module.prop
+      - modules/**
+      - apks/**
+      - sdcard/**
+      - customize.sh
+      - build.sh
+      - update.json
+      - .github/workflows/release.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Read module metadata
+        id: metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+          base_version="$(sed -n 's/^version=//p' module.prop | head -n 1)"
+          base_version="${base_version:-1.0.0}"
+          version_code="${GITHUB_RUN_NUMBER}"
+          version="${base_version}.${version_code}"
+          id="$(sed -n 's/^id=//p' module.prop | head -n 1)"
+          test -n "$version_code"
+          test -n "$id"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "version_code=$version_code" >> "$GITHUB_OUTPUT"
+          echo "id=$id" >> "$GITHUB_OUTPUT"
+
+      - name: Build module ZIP
+        run: sh build.sh "dist/${{ steps.metadata.outputs.id }}.zip"
+
+      - name: Generate update metadata
+        env:
+          VERSION: ${{ steps.metadata.outputs.version }}
+          VERSION_CODE: ${{ steps.metadata.outputs.version_code }}
+          MODULE_ID: ${{ steps.metadata.outputs.id }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          cat > dist/update.json <<EOF
+          {
+            "version": "${VERSION}",
+            "versionCode": ${VERSION_CODE},
+            "zipUrl": "https://github.com/${REPOSITORY}/releases/download/v${VERSION}/${MODULE_ID}.zip",
+            "changelog": "Automatic update for commit ${GITHUB_SHA::7}."
+          }
+          EOF
+
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.metadata.outputs.version }}
+          VERSION_CODE: ${{ steps.metadata.outputs.version_code }}
+          MODULE_ID: ${{ steps.metadata.outputs.id }}
+        run: |
+          set -euo pipefail
+          tag="v${VERSION}"
+          if gh release view "$tag" >/dev/null 2>&1; then
+            echo "Release $tag already exists; refusing to overwrite it."
+            exit 1
+          fi
+          gh release create "$tag" "dist/${MODULE_ID}.zip" "dist/update.json" \
+            --title "$MODULE_ID $VERSION" \
+            --generate-notes \
+            --notes "KernelSU module version $VERSION (versionCode $VERSION_CODE)."
