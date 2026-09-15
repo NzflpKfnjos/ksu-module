@@ -40,18 +40,11 @@ ksu-module/
 
 ## 在 KernelSU 中远程更新
 
-外层模块的 `module.prop` 已声明 `updateJson`，KernelSU 管理器会从该地址检查版本。发布新版本时：
-
-1. 修改 `module.prop` 中的 `version` 和递增的 `versionCode`。
-2. 修改 `update.json` 中的 `version`、`versionCode`、`zipUrl` 和 `changelog`。
-3. 将 `update.json` 放到仓库默认分支的 Raw 地址，并把 `module.prop` 的 `updateJson` 替换为该实际地址。
-4. 执行 `sh build.sh`，将生成的 ZIP 上传到 `zipUrl` 对应的 GitHub Release 资产（文件名建议保持 `ksu-bundle-installer.zip`）。
-
-`versionCode` 必须比设备当前安装版本大，管理器才会显示更新。`update.json` 是公开文件，不要在 URL 中放置令牌或私密信息。
+外层模块的 `module.prop` 已声明 `updateJson`，KernelSU 管理器会从该地址检查版本。`update.json` 由 GitHub Actions 自动生成；`versionCode` 必须比设备当前安装版本大，管理器才会显示更新。该文件是公开文件，不要在 URL 中放置令牌或私密信息。
 
 ## 自动发布 GitHub 更新
 
-仓库已配置 `.github/workflows/release.yml`。每次提交推送到 `main` 分支时，GitHub Actions 都会自动执行构建并创建一个 GitHub Release。版本号和 `versionCode` 由工作流自动生成，标签格式为 `v版本号`。
+仓库已配置 `.github/workflows/release.yml`。每次提交推送到 `main` 分支时（包括只修改 `README.md`），GitHub Actions 都会自动执行构建并创建一个 GitHub Release。版本号和 `versionCode` 由工作流自动生成，标签格式为 `v版本号`。
 
 发布新版本时不需要修改版本字段，直接提交代码即可：
 

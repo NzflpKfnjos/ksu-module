@@ -4,13 +4,6 @@ on:
   push:
     branches:
       - main
-    paths:
-      - modules/**
-      - apks/**
-      - sdcard/**
-      - customize.sh
-      - build.sh
-      - .github/workflows/release.yml
   workflow_dispatch:
 
 permissions:
