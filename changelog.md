@@ -1,3 +1,7 @@
+## [1.0.42](https://github.com/NzflpKfnjos/ksu-module/releases/tag/v1.0.42)
+
+- Automatic update for commit bc0ce11.
+
 ## [1.0.41](https://github.com/NzflpKfnjos/ksu-module/releases/tag/v1.0.41)
 
 - Automatic update for commit f57bee0.
