@@ -51,7 +51,7 @@ jobs:
           REPOSITORY: ${{ github.repository }}
         run: |
           set -euo pipefail
-          changelog_url="https://github.com/${REPOSITORY}/raw/main/changelog.md"
+          changelog_url="https://v4.gh-proxy.org/https://github.com/${REPOSITORY}/raw/main/changelog.md"
           changelog_entry="## [${VERSION}](https://github.com/${REPOSITORY}/releases/tag/v${VERSION})\n\n- Automatic update for commit ${GITHUB_SHA::7}.\n"
           if [ -f changelog.md ]; then
             printf '%b\n' "${changelog_entry}" > changelog.md.tmp
