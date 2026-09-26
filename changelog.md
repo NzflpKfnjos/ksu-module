@@ -1,3 +1,7 @@
+## [1.0.30](https://github.com/NzflpKfnjos/ksu-module/releases/tag/v1.0.30)
+
+- Automatic update for commit c2ed264.
+
 ## [1.0.29](https://github.com/NzflpKfnjos/ksu-module/releases/tag/v1.0.29)
 
 - Automatic update for commit bb61808.
